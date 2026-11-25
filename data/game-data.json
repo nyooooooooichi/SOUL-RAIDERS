@@ -1,10 +1,22 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "player": {
     "level": 1,
     "hp": 120,
     "power": 18,
     "defense": 12
+  },
+  "base": {
+    "type": "walkable_top_down_map",
+    "controls": ["WASD", "Arrow keys"],
+    "interactionKey": "E",
+    "facilities": [
+      {"id": "mission", "name": "ミッション受付", "status": "playable"},
+      {"id": "equipment", "name": "装備工房", "status": "planned"},
+      {"id": "companions", "name": "仲間管理所", "status": "planned"},
+      {"id": "souls", "name": "魂の祭壇", "status": "planned"},
+      {"id": "shop", "name": "アイテムショップ", "status": "planned"}
+    ]
   },
   "mission": {
     "id": "forest-001",
@@ -18,53 +30,22 @@
       "name": "森喰い",
       "hp": 520,
       "rank": "E",
-      "difficulty": [
-        "無印",
-        "超",
-        "極"
-      ]
+      "difficulty": ["無印", "超", "極"]
     }
   ],
   "companionSystem": {
     "plannedCount": 428,
-    "ranks": [
-      "E",
-      "D",
-      "C",
-      "B",
-      "A",
-      "S",
-      "SS"
-    ],
-    "roles": [
-      "アタッカー",
-      "タンク",
-      "ヒーラー",
-      "レンジャー"
-    ]
+    "ranks": ["E", "D", "C", "B", "A", "S", "SS"],
+    "roles": ["アタッカー", "タンク", "ヒーラー", "レンジャー"]
   },
   "equipmentCategories": [
-    "武器",
-    "うでわ",
-    "杖",
-    "ゆびわ",
-    "盾",
-    "おまもり",
-    "ベルト",
-    "チャーム"
+    "武器", "うでわ", "杖", "ゆびわ", "盾", "おまもり", "ベルト", "チャーム"
   ],
   "equipmentSlots": 1,
   "soulSlots": 1,
   "saveSystem": {
     "slots": 3,
     "storage": "localStorage",
-    "fields": [
-      "name",
-      "level",
-      "souls",
-      "playSeconds",
-      "createdAt",
-      "updatedAt"
-    ]
+    "fields": ["name", "level", "souls", "playSeconds", "createdAt", "updatedAt"]
   }
 }
