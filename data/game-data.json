@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "player": {
     "level": 1,
     "hp": 120,
@@ -7,15 +7,85 @@
     "defense": 12
   },
   "base": {
-    "type": "walkable_top_down_map",
-    "controls": ["WASD", "Arrow keys"],
+    "type": "expanded_walkable_top_down_map",
+    "controls": [
+      "WASD",
+      "Arrow keys"
+    ],
     "interactionKey": "E",
     "facilities": [
-      {"id": "mission", "name": "ミッション受付", "status": "playable"},
-      {"id": "equipment", "name": "装備工房", "status": "planned"},
-      {"id": "companions", "name": "仲間管理所", "status": "planned"},
-      {"id": "souls", "name": "魂の祭壇", "status": "planned"},
-      {"id": "shop", "name": "アイテムショップ", "status": "planned"}
+      {
+        "id": "mission",
+        "name": "ミッション受付",
+        "status": "playable"
+      },
+      {
+        "id": "equipment",
+        "name": "装備工房",
+        "status": "planned"
+      },
+      {
+        "id": "companions",
+        "name": "仲間管理所",
+        "status": "planned"
+      },
+      {
+        "id": "souls",
+        "name": "魂の祭壇",
+        "status": "planned"
+      },
+      {
+        "id": "shop",
+        "name": "アイテムショップ",
+        "status": "planned"
+      }
+    ],
+    "dimensions": {
+      "width": 2600,
+      "height": 1900
+    },
+    "camera": "player_follow",
+    "environment": [
+      "stone_roads",
+      "central_plaza",
+      "soul_monument",
+      "pond",
+      "flower_beds",
+      "stone_walls",
+      "trees",
+      "street_lamps"
+    ],
+    "npcs": [
+      {
+        "id": "rio",
+        "name": "案内係 リオ",
+        "interaction": "E",
+        "status": "dialogue"
+      },
+      {
+        "id": "gald",
+        "name": "整備士 ガルド",
+        "interaction": "E",
+        "status": "dialogue"
+      },
+      {
+        "id": "sena",
+        "name": "調査員 セナ",
+        "interaction": "E",
+        "status": "dialogue"
+      },
+      {
+        "id": "noa",
+        "name": "見習いレイダー ノア",
+        "interaction": "E",
+        "status": "dialogue"
+      },
+      {
+        "id": "mina",
+        "name": "補給係 ミナ",
+        "interaction": "E",
+        "status": "dialogue"
+      }
     ]
   },
   "mission": {
@@ -30,22 +100,53 @@
       "name": "森喰い",
       "hp": 520,
       "rank": "E",
-      "difficulty": ["無印", "超", "極"]
+      "difficulty": [
+        "無印",
+        "超",
+        "極"
+      ]
     }
   ],
   "companionSystem": {
     "plannedCount": 428,
-    "ranks": ["E", "D", "C", "B", "A", "S", "SS"],
-    "roles": ["アタッカー", "タンク", "ヒーラー", "レンジャー"]
+    "ranks": [
+      "E",
+      "D",
+      "C",
+      "B",
+      "A",
+      "S",
+      "SS"
+    ],
+    "roles": [
+      "アタッカー",
+      "タンク",
+      "ヒーラー",
+      "レンジャー"
+    ]
   },
   "equipmentCategories": [
-    "武器", "うでわ", "杖", "ゆびわ", "盾", "おまもり", "ベルト", "チャーム"
+    "武器",
+    "うでわ",
+    "杖",
+    "ゆびわ",
+    "盾",
+    "おまもり",
+    "ベルト",
+    "チャーム"
   ],
   "equipmentSlots": 1,
   "soulSlots": 1,
   "saveSystem": {
     "slots": 3,
     "storage": "localStorage",
-    "fields": ["name", "level", "souls", "playSeconds", "createdAt", "updatedAt"]
+    "fields": [
+      "name",
+      "level",
+      "souls",
+      "playSeconds",
+      "createdAt",
+      "updatedAt"
+    ]
   }
 }
