@@ -1,10 +1,70 @@
 {
-  "version": "0.1.0",
-  "player": {"level": 1, "hp": 120, "power": 18, "defense": 12},
-  "mission": {"id": "forest-001", "name": "静かな森の異変", "enemyCount": 6, "boss": "forest-devourer"},
-  "bosses": [{"id": "forest-devourer", "name": "森喰い", "hp": 520, "rank": "E", "difficulty": ["無印", "超", "極"]}],
-  "companionSystem": {"plannedCount": 428, "ranks": ["E", "D", "C", "B", "A", "S", "SS"], "roles": ["アタッカー", "タンク", "ヒーラー", "レンジャー"]},
-  "equipmentCategories": ["武器", "うでわ", "杖", "ゆびわ", "盾", "おまもり", "ベルト", "チャーム"],
+  "version": "0.2.0",
+  "player": {
+    "level": 1,
+    "hp": 120,
+    "power": 18,
+    "defense": 12
+  },
+  "mission": {
+    "id": "forest-001",
+    "name": "静かな森の異変",
+    "enemyCount": 6,
+    "boss": "forest-devourer"
+  },
+  "bosses": [
+    {
+      "id": "forest-devourer",
+      "name": "森喰い",
+      "hp": 520,
+      "rank": "E",
+      "difficulty": [
+        "無印",
+        "超",
+        "極"
+      ]
+    }
+  ],
+  "companionSystem": {
+    "plannedCount": 428,
+    "ranks": [
+      "E",
+      "D",
+      "C",
+      "B",
+      "A",
+      "S",
+      "SS"
+    ],
+    "roles": [
+      "アタッカー",
+      "タンク",
+      "ヒーラー",
+      "レンジャー"
+    ]
+  },
+  "equipmentCategories": [
+    "武器",
+    "うでわ",
+    "杖",
+    "ゆびわ",
+    "盾",
+    "おまもり",
+    "ベルト",
+    "チャーム"
+  ],
   "equipmentSlots": 1,
-  "soulSlots": 1
+  "soulSlots": 1,
+  "saveSystem": {
+    "slots": 3,
+    "storage": "localStorage",
+    "fields": [
+      "name",
+      "level",
+      "souls",
+      "playSeconds",
+      "createdAt",
+      "updatedAt"
+    ]
+  }
 }
