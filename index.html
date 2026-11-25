@@ -44,7 +44,7 @@ function updateBaseProfile(){const p=$("profileLine");if(p)p.textContent=current
 
 
 const baseCanvas=$("baseField"),baseCtx=baseCanvas.getContext("2d"),baseKeys=new Set();
-const BASE_W=2600,BASE_H=1900;let basePlayer={x:1300,y:1120,face:-Math.PI/2},baseCam={x:0,y:0},baseFrame=0,baseLast=0,baseLoopRunning=false,baseMoving=false,nearFacility=null,nearNpc=null,openFacility=null;
+const BASE_W=2600,BASE_H=1900;let basePlayer={x:1300,y:1300,face:-Math.PI/2},baseCam={x:0,y:0},baseFrame=0,baseLast=0,baseLoopRunning=false,baseMoving=false,nearFacility=null,nearNpc=null,openFacility=null;
 const facilities=[
 {id:"mission",name:"ミッション受付",x:1300,y:300,w:250,h:170,color:"#527b79",desc:"各地で発生している異変の調査・討伐任務を受注できます。"},
 {id:"equipment",name:"装備工房",x:620,y:650,w:220,h:165,color:"#80694c",desc:"武器や防具を整える工房です。装備の製作・強化機能は今後実装されます。"},
@@ -53,7 +53,7 @@ const facilities=[
 {id:"shop",name:"アイテムショップ",x:1950,y:1320,w:210,h:155,color:"#8b655b",desc:"冒険に必要な道具を取り扱う店です。売買機能は今後実装されます。"}
 ];
 function resizeBase(){const d=Math.min(devicePixelRatio||1,2);baseCanvas.width=Math.max(1,Math.floor(baseCanvas.clientWidth*d));baseCanvas.height=Math.max(1,Math.floor(baseCanvas.clientHeight*d));baseCtx.setTransform(d,0,0,d,0,0)}
-function enterBase(){show("base");updateBaseProfile();basePlayer={x:1300,y:1120,face:-Math.PI/2};baseKeys.clear();nearFacility=null;nearNpc=null;openFacility=null;resizeBase();if(!baseLoopRunning){baseLoopRunning=true;baseLast=performance.now();requestAnimationFrame(baseLoop)}}
+function enterBase(){show("base");updateBaseProfile();basePlayer={x:1300,y:1300,face:-Math.PI/2};baseKeys.clear();nearFacility=null;nearNpc=null;openFacility=null;resizeBase();if(!baseLoopRunning){baseLoopRunning=true;baseLast=performance.now();requestAnimationFrame(baseLoop)}}
 function facilityAt(){let found=null,best=112;for(const f of facilities){const dx=basePlayer.x-f.x,dy=basePlayer.y-(f.y+f.h/2);const d=Math.hypot(dx,dy);if(d<best){found=f;best=d}}return found}
 const baseNpcs=[
 {name:"案内係 リオ",x:1130,y:1045,color:"#d6b477",line:"ここがレイダーズの拠点だよ。準備ができたら、北側のミッション受付へ向かってね。"},
