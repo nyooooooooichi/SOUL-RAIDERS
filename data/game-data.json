@@ -1,5 +1,5 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "player": {
     "level": 1,
     "hp": 120,
@@ -123,7 +123,67 @@
       "タンク",
       "ヒーラー",
       "レンジャー"
-    ]
+    ],
+    "partySize": 4,
+    "playerIncluded": true,
+    "starterRoster": [
+      {
+        "id": "kairo",
+        "name": "カイロ",
+        "rank": "E",
+        "role": "アタッカー",
+        "hp": 105,
+        "atk": 24,
+        "def": 10
+      },
+      {
+        "id": "mira",
+        "name": "ミラ",
+        "rank": "E",
+        "role": "ヒーラー",
+        "hp": 88,
+        "atk": 13,
+        "def": 9
+      },
+      {
+        "id": "garn",
+        "name": "ガルン",
+        "rank": "E",
+        "role": "タンク",
+        "hp": 150,
+        "atk": 16,
+        "def": 22
+      },
+      {
+        "id": "fenn",
+        "name": "フェン",
+        "rank": "E",
+        "role": "レンジャー",
+        "hp": 95,
+        "atk": 21,
+        "def": 11
+      },
+      {
+        "id": "lumi",
+        "name": "ルミ",
+        "rank": "D",
+        "role": "アタッカー",
+        "hp": 100,
+        "atk": 22,
+        "def": 12
+      },
+      {
+        "id": "doran",
+        "name": "ドラン",
+        "rank": "D",
+        "role": "タンク",
+        "hp": 165,
+        "atk": 17,
+        "def": 24
+      }
+    ],
+    "partySaveField": "party",
+    "missionCpuCompanions": true
   },
   "equipmentCategories": [
     "武器",
