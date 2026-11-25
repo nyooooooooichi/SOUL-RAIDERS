@@ -51,4 +51,5 @@ addEventListener("keydown",e=>{let k=e.key.toLowerCase();if([" ","arrowup","arro
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 canvas.addEventListener("pointerdown",e=>{if(!active)return;let r=canvas.getBoundingClientRect(),x=e.clientX-r.left+cam.x,y=e.clientY-r.top+cam.y;player.face=Math.atan2(y-player.y,x-player.x);attack()});
 show("title");
+</script>
 </body></html>
