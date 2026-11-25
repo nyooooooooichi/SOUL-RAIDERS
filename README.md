@@ -1,11 +1,16 @@
 # SOUL RAIDERS
 
-現在のバージョン：Prototype 0.7.1
+現在のバージョン：Prototype 0.7.2
 
 PC向け見下ろし型アクションRPG。ブラウザで動作するプレイアブルプロトタイプを開発中です。
 
 ## 起動
 GitHub Pages等の静的ホスティングで公開するか、ローカルHTTPサーバー経由で `index.html` を開いてください。
+
+## Prototype 0.7.2
+- 起動時に存在しない `depart` ボタンへ onclick を設定していたエラーを除去
+- 初期化中のJavaScript例外でキーボード入力登録が止まる問題を修正
+- 参照されるUI要素IDの存在を確認
 
 ## Prototype 0.7.1
 - WASD操作が効かない問題を修正
