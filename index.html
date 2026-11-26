@@ -227,7 +227,7 @@ const stage=document.getElementById("threeStage"), openBtn=document.getElementBy
 const closeBtn=document.getElementById("close3DStage"), canvas3d=document.getElementById("threeCanvas");
 const status3d=document.getElementById("threeStatus"), modelInput=document.getElementById("threeModelFile");
 let renderer=null,scene=null,camera=null,player3d=null,raf=0,active3d=false,modelUrl=null;
-let mixer=null,clock=null,locomotion={idle:null,walk:null,run:null},jumpAction=null,currentLocomotion="",jumpVelocity=0,baseY=0,modelTriangles=0,modelHeight=2.5;
+let mixer=null,clock=null,locomotion={idle:null,walk:null,run:null},jumpAction=null,currentLocomotion="",jumpVelocity=0,baseY=0,jumpRequested=false,modelTriangles=0,modelHeight=2.5;
 const pressed=new Set();let yaw=0,dragging=false,lastX=0,wasMoving=false;
 function setStatus(s){status3d.textContent=s}
 function triangleCount(root){let total=0;root.traverse(o=>{if(!o.isMesh||!o.geometry)return;const g=o.geometry;total+=g.index?g.index.count/3:(g.attributes.position?.count||0)/3});return Math.round(total)}
@@ -252,7 +252,7 @@ function configureAnimations(gltf){
   if(!locomotion.run)locomotion.run=locomotion.walk;
   if(!locomotion.idle)locomotion.idle=locomotion.walk||locomotion.run;
   if(locomotion.idle)setLocomotion("idle");
-  mixer.addEventListener("finished",()=>{if(currentLocomotion)setLocomotion(currentLocomotion)});
+  mixer.addEventListener("finished",e=>{if(e.action===jumpAction){jumpAction.fadeOut(.12);const resume=currentLocomotion;currentLocomotion="";if(resume)setLocomotion(resume)}});
 }
 function start3D(){
   if(active3d)return;active3d=true;stage.classList.remove("hidden");
@@ -289,7 +289,7 @@ function animate3D(){
       mixer.update(dt);
       if(!jumpAction||!jumpAction.isRunning())setLocomotion(moving?(running?"run":"walk"):"idle");
     }else if(moving){player3d.position.y=baseY+Math.abs(Math.sin(performance.now()*.012))*(running?.055:.025)}else{player3d.position.y=baseY+Math.sin(performance.now()*.002)*.012}
-    if(pressed.has("Space")&&baseY===0&&jumpVelocity===0){jumpVelocity=5.6;if(jumpAction&&mixer){jumpAction.reset();jumpAction.setLoop(THREE.LoopOnce,1);jumpAction.clampWhenFinished=true;jumpAction.fadeIn(.08).play()}}
+    if(jumpRequested&&baseY===0&&jumpVelocity===0){jumpVelocity=5.6;jumpRequested=false;if(jumpAction&&mixer){jumpAction.reset();jumpAction.setLoop(THREE.LoopOnce,1);jumpAction.clampWhenFinished=true;jumpAction.fadeIn(.08).play()}}
     if(jumpVelocity!==0||player3d.position.y>baseY){jumpVelocity-=16*dt;player3d.position.y=Math.max(baseY,player3d.position.y+jumpVelocity*dt);if(player3d.position.y<=baseY){player3d.position.y=baseY;jumpVelocity=0;if(jumpAction&&mixer){jumpAction.fadeOut(.12);setLocomotion(moving?(running?"run":"walk"):"idle")}}}
     const target=new THREE.Vector3(player3d.position.x+Math.sin(yaw)*9,4.8+player3d.position.y,player3d.position.z+Math.cos(yaw)*9);
     camera.position.lerp(target,1-Math.pow(.001,dt));camera.lookAt(player3d.position.x,1.15+player3d.position.y,player3d.position.z-1.2);
@@ -299,7 +299,7 @@ function animate3D(){
 function stop3D(){active3d=false;cancelAnimationFrame(raf);pressed.clear();stage.classList.add("hidden");if(renderer){renderer.dispose();renderer=null}scene=null;camera=null;player3d=null;mixer=null;clock=null;if(modelUrl){URL.revokeObjectURL(modelUrl);modelUrl=null}}
 openBtn?.addEventListener("click",start3D);closeBtn?.addEventListener("click",stop3D);
 addEventListener("resize",resize3D);
-addEventListener("keydown",e=>{if(!active3d)return;if(e.code==="Escape"){stop3D();return}pressed.add(e.code)});
+addEventListener("keydown",e=>{if(!active3d)return;if(e.code==="Escape"){stop3D();return}if(e.code==="Space"&&!pressed.has(e.code))jumpRequested=true;pressed.add(e.code)});
 addEventListener("keyup",e=>pressed.delete(e.code));
 canvas3d.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;canvas3d.setPointerCapture(e.pointerId)});
 canvas3d.addEventListener("pointermove",e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;lastX=e.clientX});
