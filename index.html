@@ -221,7 +221,7 @@ show("title");
 </section>
 <script type="module">
 import * as THREE from "three";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+
 
 const stage=document.getElementById("threeStage"), openBtn=document.getElementById("open3DStage");
 const closeBtn=document.getElementById("close3DStage"), canvas3d=document.getElementById("threeCanvas");
@@ -338,9 +338,10 @@ addEventListener("keyup",e=>pressed.delete(e.code));
 canvas3d.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;canvas3d.setPointerCapture(e.pointerId)});
 canvas3d.addEventListener("pointermove",e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;lastX=e.clientX});
 canvas3d.addEventListener("pointerup",()=>dragging=false);canvas3d.addEventListener("pointercancel",()=>dragging=false);
-modelInput.addEventListener("change",e=>{
+modelInput.addEventListener("change",async e=>{
   const file=e.target.files?.[0];if(!file||!active3d)return;
   if(modelUrl)URL.revokeObjectURL(modelUrl);modelUrl=URL.createObjectURL(file);setStatus("高精細3Dモデル読み込み中…");
+  let GLTFLoader;try{({GLTFLoader}=await import("https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js"))}catch(err){setStatus("GLTFLoader読込失敗："+err.message);return}
   new GLTFLoader().load(modelUrl,gltf=>{
     if(player3d){scene.remove(player3d);player3d.traverse(o=>{if(o.geometry)o.geometry.dispose()})}
     player3d=new THREE.Group();const model=gltf.scene;
