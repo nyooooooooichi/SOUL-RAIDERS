@@ -1,4 +1,4 @@
 # SOUL RAIDERS assets
 
-Upload the supplied boss model into this folder with the exact filename `boss.glb`.
-The game loads it from `assets/boss.glb` during the first boss encounter.
+Boss model file: `897921242_1649735819862211_1992601279296611975_n (1).glb`.
+The game loads this exact file from the assets folder during boss encounters.
