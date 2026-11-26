@@ -24,7 +24,7 @@
 #threeStatus{color:#8de5d2}
 @media(max-width:620px){.three-top{align-items:flex-start}.three-top>div{max-width:48%;font-size:12px}.three-actions button,.three-actions label{padding:8px;font-size:11px}.three-bottom{font-size:10px;max-width:94%;white-space:normal;text-align:center}}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script></head><body>
-<section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.10.0</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D本編プレビュー</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
+<section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.10.1</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D本編プレビュー</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
 <section id="slots" class="screen hidden"><div class="panel"><h1 id="slotHeading">セーブデータ選択</h1><p class="muted" id="slotHelp">使用するスロットを選択してください。</p><div class="slots" id="slotList"></div><div class="panel-actions"><button class="secondary" id="slotBack">タイトルへ戻る</button></div></div></section>
 <section id="naming" class="screen hidden"><div class="panel"><h1>プレイヤーデータ作成</h1><p>あなたの名前を入力してください。</p><label for="playerName">プレイヤー名（1〜12文字）</label><br><input class="field" id="playerName" maxlength="12" autocomplete="off" placeholder="名前を入力"><p class="muted" id="nameError" aria-live="polite"></p><div class="panel-actions"><button class="btn" id="createSave">この名前で冒険を始める</button><button class="secondary" id="nameBack">戻る</button></div></div></section>
 <section id="prologue" class="screen story hidden"><div class="story-card"><div class="story-kicker">SOUL RAIDERS / PROLOGUE</div><h1 id="storyTitle">魂の異変</h1><p id="storyText" class="story-copy"></p><div class="story-progress"><i id="storyProgress"></i></div><div class="panel-actions"><button class="btn" id="storyNext">次へ</button><button class="secondary" id="storySkip">スキップ</button></div></div></section>
@@ -341,7 +341,7 @@ canvas3d.addEventListener("pointermove",e=>{if(!dragging)return;yaw-=(e.clientX-
 canvas3d.addEventListener("pointerup",()=>dragging=false);canvas3d.addEventListener("pointercancel",()=>dragging=false);
 
 /* SOUL RAIDERS 1.10.0 - uploaded GLB boss renderer.
-   Place the supplied model at assets/boss.glb. The GLB has no baked clips,
+   Place the supplied model at assets/897921242_1649735819862211_1992601279296611975_n (1).glb. The GLB has no baked clips,
    so all locomotion and attack posing below is procedural. */
 const bossCanvas=document.getElementById("boss3dCanvas");
 let bossRenderer=null,bossScene=null,bossCamera=null,bossRoot=null,bossModel=null,bossShadow=null,bossBaseScale=1,bossLoadPromise=null,bossLastSize="";
@@ -357,7 +357,7 @@ async function loadRaidBossModel(){
   bossLoadPromise=(async()=>{
     const {GLTFLoader}=await import("https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js");
     const loader=new GLTFLoader();
-    return await new Promise((resolve,reject)=>loader.load(new URL("assets/boss.glb",document.baseURI).href,g=>resolve(g),undefined,reject));
+    return await new Promise((resolve,reject)=>loader.load(new URL("assets/897921242_1649735819862211_1992601279296611975_n (1).glb",document.baseURI).href,g=>resolve(g),undefined,reject));
   })();
   return bossLoadPromise;
 }
