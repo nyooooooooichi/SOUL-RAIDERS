@@ -23,7 +23,7 @@
 #threeStatus{color:#8de5d2}
 @media(max-width:620px){.three-top{align-items:flex-start}.three-top>div{max-width:48%;font-size:12px}.three-actions button,.three-actions label{padding:8px;font-size:11px}.three-bottom{font-size:10px;max-width:94%;white-space:normal;text-align:center}}
 </style></head><body>
-<section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.8.0</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D開発ステージ</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
+<section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.9.0</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D本編プレビュー</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
 <section id="slots" class="screen hidden"><div class="panel"><h1 id="slotHeading">セーブデータ選択</h1><p class="muted" id="slotHelp">使用するスロットを選択してください。</p><div class="slots" id="slotList"></div><div class="panel-actions"><button class="secondary" id="slotBack">タイトルへ戻る</button></div></div></section>
 <section id="naming" class="screen hidden"><div class="panel"><h1>プレイヤーデータ作成</h1><p>あなたの名前を入力してください。</p><label for="playerName">プレイヤー名（1〜12文字）</label><br><input class="field" id="playerName" maxlength="12" autocomplete="off" placeholder="名前を入力"><p class="muted" id="nameError" aria-live="polite"></p><div class="panel-actions"><button class="btn" id="createSave">この名前で冒険を始める</button><button class="secondary" id="nameBack">戻る</button></div></div></section>
 <section id="prologue" class="screen story hidden"><div class="story-card"><div class="story-kicker">SOUL RAIDERS / PROLOGUE</div><h1 id="storyTitle">魂の異変</h1><p id="storyText" class="story-copy"></p><div class="story-progress"><i id="storyProgress"></i></div><div class="panel-actions"><button class="btn" id="storyNext">次へ</button><button class="secondary" id="storySkip">スキップ</button></div></div></section>
@@ -266,13 +266,46 @@ function start3D(){
     camera=new THREE.PerspectiveCamera(55,stage.clientWidth/stage.clientHeight,.1,250);
     scene.add(new THREE.HemisphereLight(0xdceeff,0x42533f,2.0));
     const sun=new THREE.DirectionalLight(0xffe2b5,3.0);sun.position.set(-18,32,14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-45;sun.shadow.camera.right=45;sun.shadow.camera.top=45;sun.shadow.camera.bottom=-45;scene.add(sun);
-    const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:0x55765a,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-    const grid=new THREE.GridHelper(100,50,0x9ab7a0,0x78947c);grid.position.y=.015;scene.add(grid);
-    const path=new THREE.Mesh(new THREE.BoxGeometry(12,.12,100),new THREE.MeshStandardMaterial({color:0x9b927b,roughness:1}));path.position.set(0,.06,-20);path.receiveShadow=true;scene.add(path);
-    for(let i=0;i<18;i++){const x=((i*37)%74)-37,z=((i*23)%86)-43;if(Math.abs(x)<8&&z<12&&z>-48)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,3,12),new THREE.MeshStandardMaterial({color:0x594637}));trunk.position.set(x,1.5,z);trunk.castShadow=true;scene.add(trunk);const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(2.1,2),new THREE.MeshStandardMaterial({color:i%2?0x426e4d:0x527d55,roughness:1}));crown.position.set(x,4,z);crown.scale.y=1.25;crown.castShadow=true;scene.add(crown)}
-    const building=new THREE.Group();const base=new THREE.Mesh(new THREE.BoxGeometry(9,4.5,7),new THREE.MeshStandardMaterial({color:0x9a9b91,roughness:.9}));base.position.y=2.25;base.castShadow=true;base.receiveShadow=true;building.add(base);const roof=new THREE.Mesh(new THREE.ConeGeometry(7,3,4),new THREE.MeshStandardMaterial({color:0x40566b,roughness:.8}));roof.position.y=5.8;roof.rotation.y=Math.PI/4;roof.castShadow=true;building.add(roof);building.position.set(-15,0,-15);scene.add(building);
+    // 3D HUB WORLD: replace the former primitive test field with a designed, walkable HQ plaza.
+    const mat=(color,roughness=.82,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(220,220,1,1),mat(0x526b58,1));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+    const plaza=new THREE.Mesh(new THREE.CircleGeometry(17,96),mat(0x777d79,.95));plaza.rotation.x=-Math.PI/2;plaza.position.y=.025;plaza.receiveShadow=true;scene.add(plaza);
+    const pathMat=mat(0xaaa18d,.95),edgeMat=mat(0x505e5a,.95);
+    function pathBox(x,z,w,d){const p=new THREE.Mesh(new THREE.BoxGeometry(w,.12,d),pathMat);p.position.set(x,.08,z);p.receiveShadow=true;scene.add(p);const e=new THREE.Mesh(new THREE.BoxGeometry(w+.45,.16,d+.45),edgeMat);e.position.set(x,.015,z);scene.add(e);p.position.y=.11}
+    pathBox(0,0,10,100);pathBox(0,-22,88,8);pathBox(0,22,88,8);
+    function makeBuilding(name,x,z,w,d,h,color,roofColor){
+      const g=new THREE.Group(),wall=mat(color),roofM=mat(roofColor),trim=mat(0xd5c9a8),dark=mat(0x263b43,.45);
+      const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wall);body.position.y=h/2;body.castShadow=true;body.receiveShadow=true;g.add(body);
+      const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.76,h*.48,4),roofM);roof.position.y=h+h*.22;roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
+      const door=new THREE.Mesh(new THREE.BoxGeometry(w*.2,h*.52,.16),dark);door.position.set(0,h*.26,d/2+.09);g.add(door);
+      for(const sx of [-1,1]){const win=new THREE.Mesh(new THREE.BoxGeometry(w*.22,h*.24,.13),mat(0x78b6bd,.25,.25));win.position.set(sx*w*.29,h*.62,d/2+.1);g.add(win);const pillar=new THREE.Mesh(new THREE.BoxGeometry(.18,h*.9,.2),trim);pillar.position.set(sx*w*.43,h*.48,d/2+.12);g.add(pillar)}
+      const sign=new THREE.Mesh(new THREE.BoxGeometry(w*.7,.42,.16),mat(0x15313b,.5));sign.position.set(0,h*.83,d/2+.13);g.add(sign);
+      g.position.set(x,0,z);scene.add(g);return g;
+    }
+    makeBuilding("HQ",0,-39,18,12,8,0x9caa9d,0x40566b);
+    makeBuilding("MISSION",-29,-17,10,8,5.4,0x9a927d,0x536b79);
+    makeBuilding("EQUIPMENT",29,-17,10,8,5.4,0x9b9a8c,0x5c596c);
+    makeBuilding("PARTY",-29,17,10,8,5.4,0x9a927d,0x496b62);
+    makeBuilding("SHOP",29,17,10,8,5.4,0xa49b84,0x76604d);
+    const trunkMat=mat(0x594638),leafMats=[mat(0x416c4e,1),mat(0x527d59,1),mat(0x63865d,1)];
+    function addTree(x,z,s=1){
+      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.32*s,.48*s,3.5*s,20),trunkMat);trunk.position.set(x,1.75*s,z);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
+      for(let i=0;i<3;i++){const crown=new THREE.Mesh(new THREE.SphereGeometry(1.65*s,32,24),leafMats[(Math.abs(Math.round(x+z))+i)%3]);crown.position.set(x+(i-1)*.72*s,(3.6+i*.58)*s,z+(i%2?.3:-.25)*s);crown.scale.set(1.05,1.18,.98);crown.castShadow=true;scene.add(crown)}
+    }
+    for(let i=0;i<48;i++){const angle=i*2.39996,r=43+(i%4)*4,x=Math.cos(angle)*r,z=Math.sin(angle)*r;if(Math.abs(x)<37&&Math.abs(z)<31)continue;addTree(x,z,.82+(i%5)*.09)}
+    const lampMat=mat(0x283b43,.35,.65),glowMat=new THREE.MeshStandardMaterial({color:0xffdf9a,emissive:0xffb84d,emissiveIntensity:1.5});
+    for(const [x,z] of [[-12,-22],[12,-22],[-12,22],[12,22],[-39,0],[39,0]]){
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(.09,.14,4.2,16),lampMat);pole.position.set(x,2.1,z);pole.castShadow=true;scene.add(pole);
+      const bulb=new THREE.Mesh(new THREE.SphereGeometry(.28,20,16),glowMat);bulb.position.set(x,4.25,z);scene.add(bulb);
+      const light=new THREE.PointLight(0xffd18a,1.15,12,2);light.position.set(x,4.1,z);scene.add(light);
+    }
+    const stoneMat=mat(0x737c78,1);
+    for(let i=0;i<32;i++){const a=i*Math.PI*2/32,r=18.5;const stone=new THREE.Mesh(new THREE.BoxGeometry(.55,.28,.8),stoneMat);stone.position.set(Math.cos(a)*r,.14,Math.sin(a)*r);stone.rotation.y=-a;stone.castShadow=true;scene.add(stone)}
+    const monument=new THREE.Group();const plinth=new THREE.Mesh(new THREE.CylinderGeometry(2.1,2.5,.8,48),mat(0x536b70,.55,.25));plinth.position.y=.4;monument.add(plinth);const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(1.55,3),new THREE.MeshStandardMaterial({color:0x66d9d0,roughness:.18,metalness:.35,emissive:0x176d70,emissiveIntensity:.45}));crystal.position.y=2.6;crystal.scale.y=1.7;crystal.castShadow=true;monument.add(crystal);monument.position.set(0,0,0);scene.add(monument);
+    // Subtle atmospheric particles around the central soul monument.
+    const dustGeo=new THREE.BufferGeometry(),dust=[];for(let i=0;i<180;i++){const a=Math.random()*Math.PI*2,r=2+Math.random()*8;dust.push(Math.cos(a)*r,.8+Math.random()*5,Math.sin(a)*r)}dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));const dustCloud=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x9cf5e7,size:.075,transparent:true,opacity:.55}));scene.add(dustCloud);
     player3d=new THREE.Group();const body=new THREE.Mesh(new THREE.CapsuleGeometry(.58,1.05,8,16),new THREE.MeshStandardMaterial({color:0x3d9293,roughness:.65}));body.position.y=1.05;body.castShadow=true;player3d.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.43,32,24),new THREE.MeshStandardMaterial({color:0xe1c9a8,roughness:.7}));head.position.y=2.05;head.castShadow=true;player3d.add(head);scene.add(player3d);
-    clock=new THREE.Clock();setStatus("WebGL稼働中 / 高精細モデル待機中");resize3D();animate3D();
+    clock=new THREE.Clock();setStatus("3D本編プレビュー / レイダーズ拠点");resize3D();animate3D();
   }catch(err){setStatus("WebGL初期化失敗："+err.message);console.error(err)}
 }
 function resize3D(){if(!renderer||!camera)return;const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
@@ -291,8 +324,8 @@ function animate3D(){
     }else if(moving){player3d.position.y=baseY+Math.abs(Math.sin(performance.now()*.012))*(running?.055:.025)}else{player3d.position.y=baseY+Math.sin(performance.now()*.002)*.012}
     if(jumpRequested&&baseY===0&&jumpVelocity===0){jumpVelocity=5.6;jumpRequested=false;if(jumpAction&&mixer){jumpAction.reset();jumpAction.setLoop(THREE.LoopOnce,1);jumpAction.clampWhenFinished=true;jumpAction.fadeIn(.08).play()}}
     if(jumpVelocity!==0||player3d.position.y>baseY){jumpVelocity-=16*dt;player3d.position.y=Math.max(baseY,player3d.position.y+jumpVelocity*dt);if(player3d.position.y<=baseY){player3d.position.y=baseY;jumpVelocity=0;if(jumpAction&&mixer){jumpAction.fadeOut(.12);setLocomotion(moving?(running?"run":"walk"):"idle")}}}
-    const target=new THREE.Vector3(player3d.position.x+Math.sin(yaw)*9,4.8+player3d.position.y,player3d.position.z+Math.cos(yaw)*9);
-    camera.position.lerp(target,1-Math.pow(.001,dt));camera.lookAt(player3d.position.x,1.15+player3d.position.y,player3d.position.z-1.2);
+    player3d.position.x=Math.max(-52,Math.min(52,player3d.position.x));player3d.position.z=Math.max(-52,Math.min(52,player3d.position.z));\n    const target=new THREE.Vector3(player3d.position.x+Math.sin(yaw)*10,6.2+player3d.position.y,player3d.position.z+Math.cos(yaw)*10);
+    camera.position.lerp(target,1-Math.pow(.001,dt));camera.lookAt(player3d.position.x,1.25+player3d.position.y,player3d.position.z-1.2);
   }
   renderer.render(scene,camera)
 }
