@@ -340,79 +340,118 @@ canvas3d.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;canvas
 canvas3d.addEventListener("pointermove",e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;lastX=e.clientX});
 canvas3d.addEventListener("pointerup",()=>dragging=false);canvas3d.addEventListener("pointercancel",()=>dragging=false);
 
-/* SOUL RAIDERS 1.10.0 - uploaded GLB boss renderer.
-   Place the supplied model at assets/897921242_1649735819862211_1992601279296611975_n (1).glb. The GLB has no baked clips,
-   so all locomotion and attack posing below is procedural. */
+/* SOUL RAIDERS 1.11.0 - animated custom GLB boss.
+   The supplied model has no skeletal clips, so the full-body performance is procedural. */
 const bossCanvas=document.getElementById("boss3dCanvas");
-let bossRenderer=null,bossScene=null,bossCamera=null,bossRoot=null,bossModel=null,bossShadow=null,bossBaseScale=1,bossLoadPromise=null,bossLastSize="";
+let bossRenderer=null,bossScene=null,bossCamera=null,bossRoot=null,bossModel=null,bossShadow=null,bossBaseScale=1,bossLoadPromise=null,bossLastSize="",bossPrevPos=null,bossDeathRaf=0,bossDying=false,bossDeathAt=0,bossOriginalMaterials=[];
 window.__soulBoss3DReady=false;
 function resizeBossRenderer(){
   if(!bossRenderer||!bossCanvas)return;
   const w=Math.max(1,bossCanvas.clientWidth),h=Math.max(1,bossCanvas.clientHeight),key=w+"x"+h;
-  if(key===bossLastSize)return;bossLastSize=key;
-  bossRenderer.setSize(w,h,false);bossCamera.left=0;bossCamera.right=w;bossCamera.top=h;bossCamera.bottom=0;bossCamera.updateProjectionMatrix();
+  if(key===bossLastSize)return;
+  bossLastSize=key;bossRenderer.setSize(w,h,false);
+  bossCamera.left=0;bossCamera.right=w;bossCamera.top=h;bossCamera.bottom=0;bossCamera.updateProjectionMatrix();
 }
 async function loadRaidBossModel(){
   if(bossLoadPromise)return bossLoadPromise;
   bossLoadPromise=(async()=>{
     const {GLTFLoader}=await import("https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js");
     const loader=new GLTFLoader();
-    return await new Promise((resolve,reject)=>loader.load(new URL("assets/897921242_1649735819862211_1992601279296611975_n (1).glb",document.baseURI).href,g=>resolve(g),undefined,reject));
-  })();
+    return await new Promise((resolve,reject)=>loader.load(new URL("assets/897921242_1649735819862211_1992601279296611975_n (1).glb",document.baseURI).href,resolve,undefined,reject));
+  })().catch(err=>{bossLoadPromise=null;throw err});
   return bossLoadPromise;
 }
 async function ensureBoss3D(){
-  if(bossRenderer)return;
-  bossRenderer=new THREE.WebGLRenderer({canvas:bossCanvas,alpha:true,antialias:true,powerPreference:"high-performance"});
-  bossRenderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
-  bossRenderer.setClearColor(0x000000,0);
-  bossScene=new THREE.Scene();
+  if(bossRenderer&&bossModel)return;
   const w=Math.max(1,bossCanvas.clientWidth),h=Math.max(1,bossCanvas.clientHeight);
-  bossCamera=new THREE.OrthographicCamera(0,w,h,0,.1,500);
-  bossCamera.position.set(w/2,h/2,200);bossCamera.lookAt(w/2,h/2,0);
-  bossScene.add(new THREE.HemisphereLight(0xe6f5ff,0x342b27,2.0));
-  const key=new THREE.DirectionalLight(0xffe0bd,2.8);key.position.set(-120,180,140);bossScene.add(key);
-  const rim=new THREE.DirectionalLight(0x68dcd7,1.6);rim.position.set(120,70,-80);bossScene.add(rim);
-  bossRoot=new THREE.Group();bossScene.add(bossRoot);
-  const gltf=await loadRaidBossModel();
-  const model=gltf.scene;
-  const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
-  bossBaseScale=184/Math.max(size.y,.001);
-  model.scale.setScalar(bossBaseScale);
-  model.position.set(-center.x*bossBaseScale,-bounds.min.y*bossBaseScale,-center.z*bossBaseScale);
-  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){const clone=m=>{const c=m.clone();if(c.emissive){c.emissive.set(0x000000);c.emissiveIntensity=0}return c};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material)}}});
-  bossModel=model;bossRoot.add(model);
-  const shadow=new THREE.Mesh(new THREE.CircleGeometry(54,40),new THREE.MeshBasicMaterial({color:0x02070a,transparent:true,opacity:.42,depthWrite:false}));
-  shadow.position.z=-2;bossScene.add(shadow);bossShadow=shadow;
-  resizeBossRenderer();window.__soulBoss3DReady=true;
+  const renderer=new THREE.WebGLRenderer({canvas:bossCanvas,alpha:true,antialias:true,powerPreference:"high-performance"});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x000000,0);
+  const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(0,w,h,0,.1,500);
+  camera.position.set(w/2,h/2,240);camera.lookAt(w/2,h/2,0);
+  scene.add(new THREE.HemisphereLight(0xe6f5ff,0x342b27,2.1));
+  const key=new THREE.DirectionalLight(0xffe0bd,3.0);key.position.set(-120,180,160);scene.add(key);
+  const rim=new THREE.DirectionalLight(0x68dcd7,1.8);rim.position.set(120,70,-80);scene.add(rim);
+  const root=new THREE.Group();scene.add(root);
+  try{
+    const gltf=await loadRaidBossModel(),model=gltf.scene;
+    const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+    bossBaseScale=190/Math.max(size.y,.001);
+    model.scale.setScalar(bossBaseScale);
+    model.position.set(-center.x*bossBaseScale,-bounds.min.y*bossBaseScale,-center.z*bossBaseScale);
+    bossOriginalMaterials=[];
+    model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;const src=Array.isArray(o.material)?o.material:[o.material];const clones=src.map(m=>{const c=m.clone();bossOriginalMaterials.push({material:c,opacity:c.opacity,transparent:c.transparent,emissive:c.emissive?c.emissive.clone():null,emissiveIntensity:c.emissiveIntensity});return c});o.material=Array.isArray(o.material)?clones:clones[0]}});
+    root.add(model);
+    const shadow=new THREE.Mesh(new THREE.CircleGeometry(56,48),new THREE.MeshBasicMaterial({color:0x02070a,transparent:true,opacity:.5,depthWrite:false}));
+    shadow.position.z=-2;scene.add(shadow);
+    bossRenderer=renderer;bossScene=scene;bossCamera=camera;bossRoot=root;bossModel=model;bossShadow=shadow;
+    resizeBossRenderer();window.__soulBoss3DReady=true;
+  }catch(err){renderer.dispose();throw err}
 }
 window.soulBossStart=async()=>{
-  try{await ensureBoss3D();bossCanvas.style.display="block"}
+  bossDying=false;if(bossDeathRaf)cancelAnimationFrame(bossDeathRaf);bossDeathRaf=0;bossPrevPos=null;
+  try{await ensureBoss3D();bossRoot.visible=true;bossRoot.scale.set(1,1,1);bossRoot.rotation.set(0,0,0);bossCanvas.style.display="block"}
   catch(err){window.__soulBoss3DReady=false;console.error("SOUL RAIDERS boss GLB load failed:",err);bossCanvas.style.display="none"}
 };
-window.soulBossStop=()=>{if(bossRoot){bossRoot.visible=false}if(bossShadow)bossShadow.visible=false};
+function renderBossDeath(){
+  if(!bossDying||!bossRenderer||!bossRoot)return;
+  const p=Math.min(1,(performance.now()-bossDeathAt)/780),ease=1-Math.pow(1-p,3);
+  bossRoot.rotation.z=-.9*ease;bossRoot.position.y+=0;
+  bossRoot.scale.setScalar(Math.max(.001,1-.62*ease));
+  for(const item of bossOriginalMaterials){const m=item.material;m.transparent=true;m.opacity=item.opacity*(1-ease);m.needsUpdate=true}
+  bossRenderer.render(bossScene,bossCamera);
+  if(p<1)bossDeathRaf=requestAnimationFrame(renderBossDeath);
+  else{bossRoot.visible=false;bossShadow.visible=false;bossDying=false;bossDeathRaf=0;for(const item of bossOriginalMaterials){item.material.opacity=item.opacity;item.material.transparent=item.transparent;item.material.needsUpdate=true}}
+}
+window.soulBossStop=()=>{
+  if(!bossRoot||!bossRenderer)return;
+  if(bossDying)return;
+  bossDying=true;bossDeathAt=performance.now();bossRoot.visible=true;bossShadow.visible=true;
+  bossDeathRaf=requestAnimationFrame(renderBossDeath);
+};
 window.soulBossRender=(enemy,cameraX,cameraY)=>{
-  if(!window.__soulBoss3DReady||!bossRenderer||!enemy)return;
-  resizeBossRenderer();const w=bossCanvas.clientWidth,h=bossCanvas.clientHeight;
+  if(!window.__soulBoss3DReady||!bossRenderer||!enemy||bossDying)return;
+  resizeBossRenderer();
+  const w=bossCanvas.clientWidth,h=bossCanvas.clientHeight;
   const sx=enemy.x-cameraX,sy=enemy.y-cameraY,groundY=h-sy;
-  const now=performance.now()/1000, rage=!!enemy.rage,attack=enemy.attackState;
-  bossRoot.visible=true;bossRoot.position.set(sx,groundY,0);
-  bossShadow.visible=true;bossShadow.position.set(sx,groundY+4,-2);
-  const bob=Math.sin(now*(rage?5.2:2.7))* (rage?5.5:3.2);
-  let squash=1,lean=0,twist=0,lunge=0;
+  const now=performance.now()/1000,rage=!!enemy.rage,attack=enemy.attackState;
+  const prev=bossPrevPos||{x:enemy.x,y:enemy.y};
+  const vx=(enemy.x-prev.x)*60,vy=(enemy.y-prev.y)*60;
+  const speed=Math.min(1,Math.hypot(vx,vy)/Math.max(1,enemy.speed||70));
+  bossPrevPos={x:enemy.x,y:enemy.y};
+  bossRoot.visible=true;bossShadow.visible=true;
+  bossRoot.position.set(sx,groundY,0);
+  bossShadow.position.set(sx,groundY+5,-2);
+  let bob=Math.sin(now*(rage?6.4:3.1))*(rage?6.2:3.6);
+  let squash=1,stretch=1,lean=0,twist=0,roll=0,offsetX=0,offsetY=0;
+  const targetX=(window.__soulPlayerX??enemy.x)-enemy.x,targetY=(window.__soulPlayerY??enemy.y)-enemy.y;
+  const facing=Math.atan2(targetX,-targetY);
+  if(speed>.04){bob+=Math.abs(Math.sin(now*(rage?13:9)))*7*speed;lean=Math.max(-.22,Math.min(.22,-vx*.0017));roll=Math.max(-.12,Math.min(.12,-vy*.0012))}
   if(attack){
-    const progress=Math.max(0,Math.min(1,1-attack.t/(rage?.62:.9)));
-    if(attack.type==="dash"){lean=-.32;twist=Math.sin(progress*Math.PI)*.22;lunge=Math.sin(progress*Math.PI)*18}
-    else if(attack.type==="slam"){squash=1-.22*Math.sin(progress*Math.PI);lean=.1*Math.sin(progress*Math.PI)}
-    else {twist=progress*Math.PI*2.4;squash=1+.12*Math.sin(progress*Math.PI*2)}
+    const duration=attack.type==="dash"?(rage?.62:.9):(rage?.62:.9);
+    const p=Math.max(0,Math.min(1,1-attack.t/duration));
+    const wind=Math.max(0,Math.min(1,p/.34)),impact=Math.max(0,Math.min(1,(p-.34)/.22)),recover=Math.max(0,Math.min(1,(p-.56)/.44));
+    if(attack.type==="dash"){
+      const dir=attack.angle||facing;
+      lean=-.5*wind+.18*recover;stretch=1+.2*wind-.08*recover;
+      offsetX=Math.cos(dir)*Math.sin(p*Math.PI)*26;offsetY=-Math.sin(dir)*Math.sin(p*Math.PI)*26;
+      twist=Math.sin(p*Math.PI)*.2;
+    }else if(attack.type==="slam"){
+      squash=1-.36*Math.sin(Math.min(1,p/.65)*Math.PI);
+      stretch=1+.24*wind;lean=.28*wind-.12*recover;
+      if(impact>0){offsetY=-Math.sin(impact*Math.PI)*13;roll=Math.sin(impact*Math.PI)*.08}
+    }else{
+      twist=Math.sin(p*Math.PI*2.2)*.42;squash=1+.15*Math.sin(p*Math.PI*2);
+      offsetX=Math.cos(p*Math.PI*2)*7;
+    }
   }
-  bossRoot.position.x+=Math.cos(now*1.8)*lunge;
-  bossRoot.position.y+=bob;
-  bossRoot.rotation.z=lean+(enemy.hit>0?Math.sin(now*55)*.12:0);
-  bossRoot.rotation.y=twist+Math.atan2((window.__soulPlayerY||enemy.y)-enemy.y,(window.__soulPlayerX||enemy.x)-enemy.x)*.08;
-  const ragePulse=rage?1+Math.sin(now*9)*.035:1;
-  bossRoot.scale.set(ragePulse*(1+(enemy.hit>0?.07:0)),squash*ragePulse*(enemy.hit>0?1.04:1),1);
-  if(bossModel){bossModel.traverse(o=>{if(!o.isMesh)return;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m.emissive){m.emissive.set(enemy.hit>0?0xff321c:(rage?0x6a160d:0x000000));m.emissiveIntensity=enemy.hit>0?1.15:(rage?.42:0)}}})}
+  if(enemy.hit>0){const hitPulse=Math.sin(now*72);lean+=hitPulse*.2;squash*=1.08;offsetX+=hitPulse*5}
+  const ragePulse=rage?1+Math.sin(now*10)*.045:1;
+  bossRoot.position.x+=offsetX;bossRoot.position.y+=bob+offsetY;
+  bossRoot.rotation.set(roll,twist+facing*.16,lean);
+  bossRoot.scale.set(ragePulse*(1+speed*.035),squash*ragePulse*stretch,ragePulse);
+  bossShadow.scale.set(1+speed*.18,1+speed*.1,1);
+  bossShadow.material.opacity=.5-(bob/190)*.16;
+  for(const item of bossOriginalMaterials){const m=item.material;if(m.emissive){if(enemy.hit>0){m.emissive.set(0xff321c);m.emissiveIntensity=1.35}else if(rage){m.emissive.set(0x7d1a0d);m.emissiveIntensity=.48+Math.sin(now*10)*.16}else{m.emissive.copy(item.emissive||new THREE.Color(0));m.emissiveIntensity=item.emissiveIntensity}}}
   bossRenderer.render(bossScene,bossCamera);
 };
 addEventListener("resize",resizeBossRenderer);
