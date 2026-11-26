@@ -22,7 +22,7 @@
 .three-bottom{position:absolute;z-index:2;bottom:16px;left:50%;transform:translateX(-50%);padding:10px 16px;background:#08131ddd;border:1px solid #66e4dc66;color:#e5f2f5;font-size:12px;white-space:nowrap}
 #threeStatus{color:#8de5d2}
 @media(max-width:620px){.three-top{align-items:flex-start}.three-top>div{max-width:48%;font-size:12px}.three-actions button,.three-actions label{padding:8px;font-size:11px}.three-bottom{font-size:10px;max-width:94%;white-space:normal;text-align:center}}
-</style></head><body>
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script></head><body>
 <section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.9.0</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D本編プレビュー</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
 <section id="slots" class="screen hidden"><div class="panel"><h1 id="slotHeading">セーブデータ選択</h1><p class="muted" id="slotHelp">使用するスロットを選択してください。</p><div class="slots" id="slotList"></div><div class="panel-actions"><button class="secondary" id="slotBack">タイトルへ戻る</button></div></div></section>
 <section id="naming" class="screen hidden"><div class="panel"><h1>プレイヤーデータ作成</h1><p>あなたの名前を入力してください。</p><label for="playerName">プレイヤー名（1〜12文字）</label><br><input class="field" id="playerName" maxlength="12" autocomplete="off" placeholder="名前を入力"><p class="muted" id="nameError" aria-live="polite"></p><div class="panel-actions"><button class="btn" id="createSave">この名前で冒険を始める</button><button class="secondary" id="nameBack">戻る</button></div></div></section>
@@ -220,7 +220,7 @@ show("title");
   <div class="three-bottom">WASD / 矢印：移動　｜　Shift：走る　｜　Space：ジャンプ　｜　マウスドラッグ：カメラ旋回　｜　Esc：終了</div>
 </section>
 <script type="module">
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import * as THREE from "three";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
 const stage=document.getElementById("threeStage"), openBtn=document.getElementById("open3DStage");
