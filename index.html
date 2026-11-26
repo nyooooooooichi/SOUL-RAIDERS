@@ -23,7 +23,7 @@
 #threeStatus{color:#8de5d2}
 @media(max-width:620px){.three-top{align-items:flex-start}.three-top>div{max-width:48%;font-size:12px}.three-actions button,.three-actions label{padding:8px;font-size:11px}.three-bottom{font-size:10px;max-width:94%;white-space:normal;text-align:center}}
 </style></head><body>
-<section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.7.0</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D開発ステージ</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
+<section id="title" class="screen title"><div class="logo">SOUL RAIDERS</div><div class="sub">ACTION RPG / PROTOTYPE 1.8.0</div><div class="menu"><button class="btn" id="newGame">はじめから</button><button class="btn" id="continueGame">つづきから</button><button class="secondary" id="open3DStage">3D開発ステージ</button></div><p class="muted">プレイデータはこのブラウザに保存されます。</p></section>
 <section id="slots" class="screen hidden"><div class="panel"><h1 id="slotHeading">セーブデータ選択</h1><p class="muted" id="slotHelp">使用するスロットを選択してください。</p><div class="slots" id="slotList"></div><div class="panel-actions"><button class="secondary" id="slotBack">タイトルへ戻る</button></div></div></section>
 <section id="naming" class="screen hidden"><div class="panel"><h1>プレイヤーデータ作成</h1><p>あなたの名前を入力してください。</p><label for="playerName">プレイヤー名（1〜12文字）</label><br><input class="field" id="playerName" maxlength="12" autocomplete="off" placeholder="名前を入力"><p class="muted" id="nameError" aria-live="polite"></p><div class="panel-actions"><button class="btn" id="createSave">この名前で冒険を始める</button><button class="secondary" id="nameBack">戻る</button></div></div></section>
 <section id="prologue" class="screen story hidden"><div class="story-card"><div class="story-kicker">SOUL RAIDERS / PROLOGUE</div><h1 id="storyTitle">魂の異変</h1><p id="storyText" class="story-copy"></p><div class="story-progress"><i id="storyProgress"></i></div><div class="panel-actions"><button class="btn" id="storyNext">次へ</button><button class="secondary" id="storySkip">スキップ</button></div></div></section>
@@ -214,10 +214,10 @@ show("title");
 <section id="threeStage" class="hidden" aria-label="3D開発ステージ">
   <canvas id="threeCanvas"></canvas>
   <div class="three-top">
-    <div><strong>SOUL RAIDERS / 3D FOUNDATION</strong><small>THIRD-PERSON TEST FIELD　|　<span id="threeStatus">3Dエンジン待機中</span></small></div>
+    <div><strong>SOUL RAIDERS / 3D CHARACTER LAB</strong><small>HIGH-DETAIL MODEL TEST　|　<span id="threeStatus">3Dエンジン待機中</span></small><small>品質目安：Player 30k–80k / Enemy 10k–40k / Boss 60k–150k triangles</small></div>
     <div class="three-actions"><label for="threeModelFile">GLB / GLTF読込<input id="threeModelFile" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" hidden></label><button id="close3DStage">開発ステージ終了</button></div>
   </div>
-  <div class="three-bottom">WASD / 矢印：移動　｜　マウスドラッグ：カメラ旋回　｜　モデル読込：GLB / GLTF　｜　Esc：終了</div>
+  <div class="three-bottom">WASD / 矢印：移動　｜　Shift：走る　｜　Space：ジャンプ　｜　マウスドラッグ：カメラ旋回　｜　Esc：終了</div>
 </section>
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
@@ -227,8 +227,33 @@ const stage=document.getElementById("threeStage"), openBtn=document.getElementBy
 const closeBtn=document.getElementById("close3DStage"), canvas3d=document.getElementById("threeCanvas");
 const status3d=document.getElementById("threeStatus"), modelInput=document.getElementById("threeModelFile");
 let renderer=null,scene=null,camera=null,player3d=null,raf=0,active3d=false,modelUrl=null;
-const pressed=new Set();let yaw=0,dragging=false,lastX=0;
+let mixer=null,clock=null,locomotion={idle:null,walk:null,run:null},jumpAction=null,currentLocomotion="",jumpVelocity=0,baseY=0,modelTriangles=0,modelHeight=2.5;
+const pressed=new Set();let yaw=0,dragging=false,lastX=0,wasMoving=false;
 function setStatus(s){status3d.textContent=s}
+function triangleCount(root){let total=0;root.traverse(o=>{if(!o.isMesh||!o.geometry)return;const g=o.geometry;total+=g.index?g.index.count/3:(g.attributes.position?.count||0)/3});return Math.round(total)}
+function setLocomotion(name){
+  if(!mixer||!locomotion[name]||currentLocomotion===name)return;
+  const next=locomotion[name];next.reset().fadeIn(.22).play();
+  const prev=locomotion[currentLocomotion];if(prev)prev.fadeOut(.22);
+  currentLocomotion=name;
+}
+function configureAnimations(gltf){
+  mixer=null;locomotion={idle:null,walk:null,run:null};jumpAction=null;currentLocomotion="";
+  if(!gltf.animations?.length)return;
+  mixer=new THREE.AnimationMixer(gltf.scene);
+  for(const clip of gltf.animations){
+    const n=clip.name.toLowerCase(),action=mixer.clipAction(clip);
+    if(/idle|wait|stand|breath/.test(n)&&!locomotion.idle)locomotion.idle=action;
+    else if(/run|sprint/.test(n)&&!locomotion.run)locomotion.run=action;
+    else if(/walk|move/.test(n)&&!locomotion.walk)locomotion.walk=action;
+    else if(/jump|leap/.test(n)&&!jumpAction)jumpAction=action;
+  }
+  if(!locomotion.walk)locomotion.walk=locomotion.run;
+  if(!locomotion.run)locomotion.run=locomotion.walk;
+  if(!locomotion.idle)locomotion.idle=locomotion.walk||locomotion.run;
+  if(locomotion.idle)setLocomotion("idle");
+  mixer.addEventListener("finished",()=>{if(currentLocomotion)setLocomotion(currentLocomotion)});
+}
 function start3D(){
   if(active3d)return;active3d=true;stage.classList.remove("hidden");
   try{
@@ -244,19 +269,34 @@ function start3D(){
     const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:0x55765a,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
     const grid=new THREE.GridHelper(100,50,0x9ab7a0,0x78947c);grid.position.y=.015;scene.add(grid);
     const path=new THREE.Mesh(new THREE.BoxGeometry(12,.12,100),new THREE.MeshStandardMaterial({color:0x9b927b,roughness:1}));path.position.set(0,.06,-20);path.receiveShadow=true;scene.add(path);
-    for(let i=0;i<18;i++){const x=((i*37)%74)-37,z=((i*23)%86)-43;if(Math.abs(x)<8&&z<12&&z>-48)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,3,7),new THREE.MeshStandardMaterial({color:0x594637}));trunk.position.set(x,1.5,z);trunk.castShadow=true;scene.add(trunk);const crown=new THREE.Mesh(new THREE.DodecahedronGeometry(2.1,1),new THREE.MeshStandardMaterial({color:i%2?0x426e4d:0x527d55,roughness:1}));crown.position.set(x,4,z);crown.scale.y=1.25;crown.castShadow=true;scene.add(crown)}
+    for(let i=0;i<18;i++){const x=((i*37)%74)-37,z=((i*23)%86)-43;if(Math.abs(x)<8&&z<12&&z>-48)continue;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,3,12),new THREE.MeshStandardMaterial({color:0x594637}));trunk.position.set(x,1.5,z);trunk.castShadow=true;scene.add(trunk);const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(2.1,2),new THREE.MeshStandardMaterial({color:i%2?0x426e4d:0x527d55,roughness:1}));crown.position.set(x,4,z);crown.scale.y=1.25;crown.castShadow=true;scene.add(crown)}
     const building=new THREE.Group();const base=new THREE.Mesh(new THREE.BoxGeometry(9,4.5,7),new THREE.MeshStandardMaterial({color:0x9a9b91,roughness:.9}));base.position.y=2.25;base.castShadow=true;base.receiveShadow=true;building.add(base);const roof=new THREE.Mesh(new THREE.ConeGeometry(7,3,4),new THREE.MeshStandardMaterial({color:0x40566b,roughness:.8}));roof.position.y=5.8;roof.rotation.y=Math.PI/4;roof.castShadow=true;building.add(roof);building.position.set(-15,0,-15);scene.add(building);
-    player3d=new THREE.Group();const body=new THREE.Mesh(new THREE.CapsuleGeometry(.58,1.05,5,10),new THREE.MeshStandardMaterial({color:0x3d9293,roughness:.65}));body.position.y=1.05;body.castShadow=true;player3d.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.43,16,12),new THREE.MeshStandardMaterial({color:0xe1c9a8,roughness:.7}));head.position.y=2.05;head.castShadow=true;player3d.add(head);scene.add(player3d);
-    setStatus("WebGL稼働中 / 3Dフィールド生成完了");resize3D();animate3D();
+    player3d=new THREE.Group();const body=new THREE.Mesh(new THREE.CapsuleGeometry(.58,1.05,8,16),new THREE.MeshStandardMaterial({color:0x3d9293,roughness:.65}));body.position.y=1.05;body.castShadow=true;player3d.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.43,32,24),new THREE.MeshStandardMaterial({color:0xe1c9a8,roughness:.7}));head.position.y=2.05;head.castShadow=true;player3d.add(head);scene.add(player3d);
+    clock=new THREE.Clock();setStatus("WebGL稼働中 / 高精細モデル待機中");resize3D();animate3D();
   }catch(err){setStatus("WebGL初期化失敗："+err.message);console.error(err)}
 }
 function resize3D(){if(!renderer||!camera)return;const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 function animate3D(){
   if(!active3d)return;raf=requestAnimationFrame(animate3D);
-  if(player3d){let x=(pressed.has("KeyD")||pressed.has("ArrowRight")?1:0)-(pressed.has("KeyA")||pressed.has("ArrowLeft")?1:0);let z=(pressed.has("KeyS")||pressed.has("ArrowDown")?1:0)-(pressed.has("KeyW")||pressed.has("ArrowUp")?1:0);const len=Math.hypot(x,z)||1;x/=len;z/=len;if(x||z){const angle=Math.atan2(x,z)+yaw;player3d.position.x+=Math.sin(angle)*8/60;player3d.position.z+=Math.cos(angle)*8/60;player3d.rotation.y=angle}const desired=new THREE.Vector3(player3d.position.x+Math.sin(yaw)*10,6.2,player3d.position.z+Math.cos(yaw)*10);camera.position.lerp(desired,.09);camera.lookAt(player3d.position.x,1.2,player3d.position.z-1.5)}
+  const dt=Math.min(clock?.getDelta()||1/60,.05);
+  if(player3d){
+    let x=(pressed.has("KeyD")||pressed.has("ArrowRight")?1:0)-(pressed.has("KeyA")||pressed.has("ArrowLeft")?1:0);
+    let z=(pressed.has("KeyS")||pressed.has("ArrowDown")?1:0)-(pressed.has("KeyW")||pressed.has("ArrowUp")?1:0);
+    const moving=!!(x||z),running=moving&&pressed.has("ShiftLeft")||moving&&pressed.has("ShiftRight");
+    const len=Math.hypot(x,z)||1;x/=len;z/=len;
+    if(moving){const angle=Math.atan2(x,z)+yaw;player3d.position.x+=Math.sin(angle)*(running?12:7.2)*dt;player3d.position.z+=Math.cos(angle)*(running?12:7.2)*dt;player3d.rotation.y=angle}
+    if(mixer){
+      mixer.update(dt);
+      if(!jumpAction||!jumpAction.isRunning())setLocomotion(moving?(running?"run":"walk"):"idle");
+    }else if(moving){player3d.position.y=baseY+Math.abs(Math.sin(performance.now()*.012))*(running?.055:.025)}else{player3d.position.y=baseY+Math.sin(performance.now()*.002)*.012}
+    if(pressed.has("Space")&&baseY===0&&jumpVelocity===0){jumpVelocity=5.6;if(jumpAction&&mixer){jumpAction.reset();jumpAction.setLoop(THREE.LoopOnce,1);jumpAction.clampWhenFinished=true;jumpAction.fadeIn(.08).play()}}
+    if(jumpVelocity!==0||player3d.position.y>baseY){jumpVelocity-=16*dt;player3d.position.y=Math.max(baseY,player3d.position.y+jumpVelocity*dt);if(player3d.position.y<=baseY){player3d.position.y=baseY;jumpVelocity=0;if(jumpAction&&mixer){jumpAction.fadeOut(.12);setLocomotion(moving?(running?"run":"walk"):"idle")}}}
+    const target=new THREE.Vector3(player3d.position.x+Math.sin(yaw)*9,4.8+player3d.position.y,player3d.position.z+Math.cos(yaw)*9);
+    camera.position.lerp(target,1-Math.pow(.001,dt));camera.lookAt(player3d.position.x,1.15+player3d.position.y,player3d.position.z-1.2);
+  }
   renderer.render(scene,camera)
 }
-function stop3D(){active3d=false;cancelAnimationFrame(raf);pressed.clear();stage.classList.add("hidden");if(renderer){renderer.dispose();renderer=null}scene=null;camera=null;player3d=null;if(modelUrl){URL.revokeObjectURL(modelUrl);modelUrl=null}}
+function stop3D(){active3d=false;cancelAnimationFrame(raf);pressed.clear();stage.classList.add("hidden");if(renderer){renderer.dispose();renderer=null}scene=null;camera=null;player3d=null;mixer=null;clock=null;if(modelUrl){URL.revokeObjectURL(modelUrl);modelUrl=null}}
 openBtn?.addEventListener("click",start3D);closeBtn?.addEventListener("click",stop3D);
 addEventListener("resize",resize3D);
 addEventListener("keydown",e=>{if(!active3d)return;if(e.code==="Escape"){stop3D();return}pressed.add(e.code)});
@@ -264,6 +304,20 @@ addEventListener("keyup",e=>pressed.delete(e.code));
 canvas3d.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;canvas3d.setPointerCapture(e.pointerId)});
 canvas3d.addEventListener("pointermove",e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;lastX=e.clientX});
 canvas3d.addEventListener("pointerup",()=>dragging=false);canvas3d.addEventListener("pointercancel",()=>dragging=false);
-modelInput.addEventListener("change",e=>{const file=e.target.files?.[0];if(!file||!active3d)return;if(modelUrl)URL.revokeObjectURL(modelUrl);modelUrl=URL.createObjectURL(file);setStatus("3Dモデル読み込み中…");new GLTFLoader().load(modelUrl,gltf=>{if(player3d){scene.remove(player3d);player3d.traverse(o=>{if(o.geometry)o.geometry.dispose()})}player3d=gltf.scene;const box=new THREE.Box3().setFromObject(player3d),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());const scale=2.5/Math.max(size.y,.001);player3d.scale.setScalar(scale);player3d.position.set(-center.x*scale,0,-center.z*scale);player3d.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});scene.add(player3d);setStatus("モデル読込成功："+file.name)},undefined,err=>{setStatus("モデル読込失敗："+err.message);console.error(err)})});
+modelInput.addEventListener("change",e=>{
+  const file=e.target.files?.[0];if(!file||!active3d)return;
+  if(modelUrl)URL.revokeObjectURL(modelUrl);modelUrl=URL.createObjectURL(file);setStatus("高精細3Dモデル読み込み中…");
+  new GLTFLoader().load(modelUrl,gltf=>{
+    if(player3d){scene.remove(player3d);player3d.traverse(o=>{if(o.geometry)o.geometry.dispose()})}
+    player3d=new THREE.Group();const model=gltf.scene;
+    const rawBox=new THREE.Box3().setFromObject(model),size=rawBox.getSize(new THREE.Vector3()),center=rawBox.getCenter(new THREE.Vector3());
+    const scale=2.5/Math.max(size.y,.001);model.scale.setScalar(scale);model.position.set(-center.x*scale,-rawBox.min.y*scale,-center.z*scale);
+    model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if("envMapIntensity" in m)m.envMapIntensity=1.0})}}});
+    player3d.add(model);scene.add(player3d);baseY=0;player3d.position.set(0,0,0);
+    modelHeight=size.y*scale;modelTriangles=triangleCount(model);configureAnimations(gltf);
+    const animNames=gltf.animations.map(a=>a.name).join(", ")||"なし";
+    setStatus("読込成功："+file.name+" / "+modelTriangles.toLocaleString()+" triangles / Animations: "+animNames.slice(0,90));
+  },undefined,err=>{setStatus("モデル読込失敗："+err.message);console.error(err)})
+});
 </script>
 </body></html>
