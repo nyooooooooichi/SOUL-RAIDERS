@@ -56,7 +56,7 @@ const rim=new THREE.PointLight(0x36d9e2,18,14);rim.position.set(-4,3,-3);scene.a
 const floor=new THREE.Mesh(new THREE.CircleGeometry(16,80),new THREE.MeshStandardMaterial({color:0x101d2b,roughness:.9,metalness:.1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.025;floor.receiveShadow=true;scene.add(floor);
 const grid=new THREE.GridHelper(30,30,0x28616a,0x1a3442);grid.position.y=0;scene.add(grid);
 const ring=new THREE.Mesh(new THREE.TorusGeometry(1.65,.018,8,100),new THREE.MeshBasicMaterial({color:0x48d8d4,transparent:true,opacity:.48}));ring.rotation.x=Math.PI/2;ring.position.y=.015;scene.add(ring);
-const root=new THREE.Group();scene.add(root);let model=null,modelHeight=2,enabled=true;
+const root=new THREE.Group();scene.add(root);let model=null,modelHeight=2,modelScale=1,modelBaseY=0,enabled=true;
 let yaw=0,moveX=0,moveY=0,velY=0,jumpY=0,attackT=0,dashT=0,turnPulse=0,elapsed=0;
 const target=new THREE.Vector3(0,1,0),camOffset=new THREE.Vector3(0,2.6,7.2);let orbit=0,zoom=1,drag=null;
 function setStatus(s){status.textContent=s}
@@ -65,8 +65,8 @@ try{
  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material.side=THREE.FrontSide;}}});
  const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
  modelHeight=Math.max(size.y,.5);model.position.sub(center);model.position.y+=modelHeight*.5;
- const scale=2.15/modelHeight;model.scale.setScalar(scale);modelHeight=2.15;
- const scaledBox=new THREE.Box3().setFromObject(model);model.position.y-=scaledBox.min.y;
+ modelScale=2.15/modelHeight;model.scale.setScalar(modelScale);modelHeight=2.15;
+ const scaledBox=new THREE.Box3().setFromObject(model);model.position.y-=scaledBox.min.y;modelBaseY=model.position.y;
  const sphere=new THREE.Sphere();scaledBox.getBoundingSphere(sphere);
  camera.position.set(0,Math.max(2.8,sphere.radius*1.2),Math.max(5.2,sphere.radius*3.1));zoom=1;
  loadtext.textContent='モデル読み込み完了';loading.style.opacity='0';setTimeout(()=>loading.remove(),350);setStatus('操作できます');
@@ -109,9 +109,9 @@ function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last
   const lean=attackT>0?-.34*Math.sin((1-attackT/.62)*Math.PI):dashT>0?-.2:0;
   model.rotation.x=lean+(enabled?Math.sin(elapsed*2)*.012:0);
   model.rotation.z=enabled?Math.sin(elapsed*2.8)*.018:0;
-  model.position.y=(modelHeight*.0)+bob;
+  model.position.y=modelBaseY+bob;
   const pulse=attackT>0?1+Math.sin((1-attackT/.62)*Math.PI)*.08:1;
-  model.scale.setScalar(2.15/modelHeight*pulse);
+  model.scale.setScalar(modelScale*pulse);
   ring.position.x=root.position.x;ring.position.z=root.position.z;ring.material.opacity=.28+Math.sin(elapsed*2)*.12;
   target.set(root.position.x,1.0+jumpY*.35,root.position.z);
   const desired=new THREE.Vector3(Math.sin(orbit)*7.1*zoom,2.8*zoom,Math.cos(orbit)*7.1*zoom).add(target);
